@@ -22,6 +22,7 @@ body {
     padding: 10px;
 }
 .logo { width: 120px; }
+
 input, button {
     width: 90%;
     padding: 14px;
@@ -29,6 +30,7 @@ input, button {
     border-radius: 8px;
     border: none;
 }
+
 .inscrire { background: green; color: white; }
 .desinscrire { background: red; color: white; }
 .admin { background: #444; color: white; }
@@ -61,7 +63,6 @@ input, button {
 <h3>Admin</h3>
 
 <input type="password" id="adminCode" placeholder="Code admin">
-
 <input type="number" id="nbPlaces" placeholder="Nombre de places">
 
 <button class="admin" onclick="changerPlaces()">Mettre à jour les places</button>
@@ -81,6 +82,7 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const ref = firebase.database().ref("joueurs");
 const configRef = firebase.database().ref("config");
 
@@ -109,20 +111,30 @@ function inscrire(){
 
     joueurs.push(nom);
     ref.set(joueurs);
-localStorage.setItem("pseudo", nom);
-    localStorage.setItem("monPseudoPoker", nom);
-let pseudo = localStorage.getItem("pseudo") || localStorage.getItem("monPseudoPoker");
-  
+
+    localStorage.setItem("pseudo", nom);
+
+    document.getElementById("nom").value = nom;
+
+    alert("Pseudo mémorisé : " + nom);
 }
 
 function desinscrire(){
     let pseudo = localStorage.getItem("pseudo");
-    if(!pseudo) return alert("Aucun pseudo mémorisé");
+
+    if(!pseudo) return alert("Aucun pseudo mémorisé sur ce téléphone");
+
+    if(!confirm("Voulez-vous vous désinscrire : " + pseudo + " ?"))
+        return;
 
     joueurs = joueurs.filter(j => norm(j) !== norm(pseudo));
     ref.set(joueurs);
 
     localStorage.removeItem("pseudo");
+
+    document.getElementById("nom").value = "";
+
+    alert("Désinscription effectuée : " + pseudo);
 }
 
 function changerPlaces(){
