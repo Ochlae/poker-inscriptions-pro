@@ -1,0 +1,15 @@
+{
+  "name": "Pexiora Poker Club",
+  "short_name": "Poker Club",
+  "start_url": "/poker-inscriptions-pro/",
+  "display": "standalone",
+  "background_color": "#0b1a0b",
+  "theme_color": "#0b1a0b",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
