@@ -71,6 +71,15 @@ input, button {
 
 <h3>Attente</h3>
 <div id="attente"></div>
+<div style="margin-top:30px; border-top:1px solid #555; padding-top:20px;">
+  <h3>Admin</h3>
+
+  <input type="password" id="adminCode" placeholder="Code admin">
+
+  <button onclick="resetTournoi()" style="background:#444; color:white;">
+    Réinitialiser le tournoi
+  </button>
+</div>
 
 </div>
 
@@ -133,6 +142,22 @@ function afficher(){
 
     document.getElementById("attente").innerHTML =
         att.map((j,i)=>(i+1)+". "+j).join("<br>");
+}
+    function resetTournoi() {
+  const code = document.getElementById("adminCode").value;
+
+  if (code === "pexiora2026" || code === "julien2026") {
+
+    if (confirm("Réinitialiser le tournoi ?")) {
+
+      firebase.database().ref("joueurs").set([]);
+      alert("Tournoi réinitialisé");
+
+    }
+
+  } else {
+    alert("Code admin incorrect");
+  }
 }
 </script>
 
