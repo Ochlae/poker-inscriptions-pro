@@ -2,7 +2,8 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Pexiora Poker Club - Inscription</title>
+<title>Pexiora Poker Club - Inscriptions PRO</title>
+
 <style>
 body {
     font-family: Arial, sans-serif;
@@ -10,48 +11,41 @@ body {
     color: white;
     text-align: center;
 }
-
 .container {
-    max-width: 600px;
+    max-width: 700px;
     margin: auto;
     padding: 20px;
 }
-
 .logo {
-    width: 200px;
-    margin-bottom: 20px;
+    width: 180px;
+    margin-bottom: 15px;
 }
-
 h1 {
     color: gold;
 }
-
 input {
-    padding: 10px;
-    width: 70%;
-    margin: 10px 0;
-    border-radius: 5px;
+    padding: 12px;
+    width: 75%;
+    border-radius: 6px;
     border: none;
+    margin: 10px;
 }
-
 button {
-    padding: 10px 15px;
-    margin: 5px;
+    padding: 12px 18px;
+    margin: 6px;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
+    font-weight: bold;
 }
-
 .inscrire {
     background: green;
     color: white;
 }
-
 .desinscrire {
     background: red;
     color: white;
 }
-
 .liste {
     margin-top: 20px;
     text-align: left;
@@ -59,10 +53,17 @@ button {
     padding: 15px;
     border-radius: 10px;
 }
-
+.attente {
+    margin-top: 20px;
+    text-align: left;
+    background: #332200;
+    padding: 15px;
+    border-radius: 10px;
+}
 .compteur {
-    font-size: 20px;
-    margin: 10px 0;
+    font-size: 22px;
+    margin: 15px 0;
+    color: gold;
 }
 </style>
 </head>
@@ -71,76 +72,112 @@ button {
 
 <div class="container">
 
-<img src="file:///C:/Users/grand/OneDrive/Documents/Projet%20inscriptions/logo.png" class="logo">
-
+<img src="logo.png" class="logo">
 
 <h1>PEXIORA POKER CLUB</h1>
+<h2>Inscriptions tournoi</h2>
 
-<div class="compteur" id="compteur">0 / 64 inscrits</div>
+<div class="compteur" id="compteur">Chargement...</div>
 
-<input type="text" id="nom" placeholder="Votre pseudo">
+<input type="text" id="nom" placeholder="Votre prénom ou pseudo">
 
 <br>
 
 <button class="inscrire" onclick="inscrire()">Je m'inscris</button>
 <button class="desinscrire" onclick="desinscrire()">Je me désinscris</button>
 
+<h2>Liste des inscrits</h2>
 <div class="liste" id="liste"></div>
+
+<h2>Liste d'attente</h2>
+<div class="attente" id="attente"></div>
 
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDANUdOf2ui5gfuvdOMPfOX_SVaEcoT7-8",
+  authDomain: "pexiora-poker-inscriptrions.firebaseapp.com",
+  databaseURL: "https://pexiora-poker-inscriptrions-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "pexiora-poker-inscriptrions",
+  storageBucket: "pexiora-poker-inscriptrions.firebasestorage.app",
+  messagingSenderId: "663409779372",
+  appId: "1:663409779372:web:5aeb38e5cc677385887509"
+};
 
-let joueurs = JSON.parse(localStorage.getItem("joueurs")) || [];
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const joueursRef = database.ref("joueurs");
 
-function sauvegarder() {
-    localStorage.setItem("joueurs", JSON.stringify(joueurs));
-}
+let joueurs = [];
 
-function afficher() {
-    let listeHTML = "";
-    joueurs.forEach((j, i) => {
-        listeHTML += (i+1) + ". " + j + "<br>";
-    });
+joueursRef.on("value", (snapshot) => {
+    joueurs = snapshot.val() || [];
+    afficher();
+});
 
-    document.getElementById("liste").innerHTML = listeHTML;
-    document.getElementById("compteur").innerText = joueurs.length + " / 64 inscrits";
+function nettoyerNom(nom) {
+    return nom.trim();
 }
 
 function inscrire() {
-    let nom = document.getElementById("nom").value.trim();
+    let nom = nettoyerNom(document.getElementById("nom").value);
 
     if (nom === "") {
-        alert("Entre un pseudo !");
+        alert("Entre ton prénom ou ton pseudo.");
         return;
     }
 
     if (joueurs.includes(nom)) {
-        alert("Déjà inscrit !");
-        return;
-    }
-
-    if (joueurs.length >= 72) {
-        alert("Complet !");
+        alert("Tu es déjà inscrit.");
         return;
     }
 
     joueurs.push(nom);
-    sauvegarder();
-    afficher();
+    joueursRef.set(joueurs);
+    document.getElementById("nom").value = "";
 }
 
 function desinscrire() {
-    let nom = document.getElementById("nom").value.trim();
+    let nom = nettoyerNom(document.getElementById("nom").value);
+
+    if (nom === "") {
+        alert("Entre ton prénom ou ton pseudo pour te désinscrire.");
+        return;
+    }
 
     joueurs = joueurs.filter(j => j !== nom);
-
-    sauvegarder();
-    afficher();
+    joueursRef.set(joueurs);
+    document.getElementById("nom").value = "";
 }
 
-afficher();
+function afficher() {
+    let inscrits = joueurs.slice(0, 64);
+    let attente = joueurs.slice(64, 72);
 
+    document.getElementById("compteur").innerText =
+        inscrits.length + " / 64 inscrits" +
+        (attente.length > 0 ? " — " + attente.length + " en attente" : "");
+
+    let listeHTML = "";
+    inscrits.forEach((j, i) => {
+        listeHTML += (i + 1) + ". " + j + "<br>";
+    });
+
+    document.getElementById("liste").innerHTML =
+        listeHTML || "Aucun inscrit pour le moment.";
+
+    let attenteHTML = "";
+    attente.forEach((j, i) => {
+        attenteHTML += (i + 1) + ". " + j + "<br>";
+    });
+
+    document.getElementById("attente").innerHTML =
+        attenteHTML || "Aucune personne en attente.";
+}
 </script>
 
 </body>
