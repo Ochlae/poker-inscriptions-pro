@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<link rel="icon" href="icon.png">
-<link rel="apple-touch-icon" href="icon.png"> 
 <meta charset="UTF-8">
-<title>Pexiora Poker Club - Inscriptions</title>
+<title>Pexiora Poker Club</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 body {
@@ -16,38 +15,23 @@ body {
     background: #0b1a0b;
     color: white;
     text-align: center;
-    margin: 0;
 }
 .container {
     max-width: 600px;
     margin: auto;
-    padding: 15px;
+    padding: 10px;
 }
-.logo {
-    width: 140px;
-}
-h1 { color: gold; }
-
+.logo { width: 120px; }
 input, button {
     width: 90%;
     padding: 14px;
     margin: 6px;
     border-radius: 8px;
     border: none;
-    font-size: 16px;
 }
-
 .inscrire { background: green; color: white; }
 .desinscrire { background: red; color: white; }
-
-.compteur {
-    margin: 15px;
-    font-size: 18px;
-    color: gold;
-}
-
-.liste { background: #1a2a1a; padding: 10px; border-radius: 10px; }
-.attente { background: #3a2a00; padding: 10px; border-radius: 10px; }
+.admin { background: #444; color: white; }
 </style>
 </head>
 
@@ -57,7 +41,7 @@ input, button {
 
 <img src="logo.png" class="logo">
 
-<h1>PEXIORA POKER CLUB</h1>
+<h2>PEXIORA POKER CLUB</h2>
 
 <div id="compteur"></div>
 
@@ -71,15 +55,17 @@ input, button {
 
 <h3>Attente</h3>
 <div id="attente"></div>
-<div style="margin-top:30px; border-top:1px solid #555; padding-top:20px;">
-  <h3>Admin</h3>
 
-  <input type="password" id="adminCode" placeholder="Code admin">
+<hr>
 
-  <button onclick="resetTournoi()" style="background:#444; color:white;">
-    Réinitialiser le tournoi
-  </button>
-</div>
+<h3>Admin</h3>
+
+<input type="password" id="adminCode" placeholder="Code admin">
+
+<input type="number" id="nbPlaces" placeholder="Nombre de places">
+
+<button class="admin" onclick="changerPlaces()">Mettre à jour les places</button>
+<button class="admin" onclick="resetTournoi()">Réinitialiser tournoi</button>
 
 </div>
 
@@ -88,7 +74,7 @@ input, button {
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyDANUdOf2ui5gfuvdOMPfOX_SVaEcoT7-8",
+  apiKey: "AIzaSy...",
   authDomain: "pexiora-poker-inscriptrions.firebaseapp.com",
   databaseURL: "https://pexiora-poker-inscriptrions-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "pexiora-poker-inscriptrions"
@@ -96,62 +82,81 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const ref = firebase.database().ref("joueurs");
-
-const PLACES = 64;
-const MAX = 72;
+const configRef = firebase.database().ref("config");
 
 let joueurs = [];
+let places = 64;
 
 ref.on("value", snap => {
     joueurs = snap.val() || [];
     afficher();
 });
 
+configRef.on("value", snap => {
+    let data = snap.val();
+    if(data && data.places) places = data.places;
+    afficher();
+});
+
 function norm(n){ return n.trim().toLowerCase(); }
+
 function inscrire(){
     let nom = document.getElementById("nom").value.trim();
-    if(!nom) return alert("Entre ton pseudo");
+    if(!nom) return alert("Entre un pseudo");
 
     if(joueurs.some(j => norm(j) === norm(nom)))
         return alert("Déjà inscrit");
 
-    if(joueurs.length >= MAX)
-        return alert("Complet");
-
     joueurs.push(nom);
     ref.set(joueurs);
 
-    localStorage.setItem("monPseudoPoker", nom);
-
-    document.getElementById("nom").value = nom;
-    alert("Inscription enregistrée pour : " + nom);
+    localStorage.setItem("pseudo", nom);
 }
 
 function desinscrire(){
-    let pseudoMemoire = localStorage.getItem("monPseudoPoker");
+    let pseudo = localStorage.getItem("pseudo");
+    if(!pseudo) return alert("Aucun pseudo mémorisé");
 
-    if(!pseudoMemoire)
-        return alert("Aucun pseudo mémorisé sur ce téléphone.");
-
-    if(!confirm("Voulez-vous vous désinscrire : " + pseudoMemoire + " ?"))
-        return;
-
-    joueurs = joueurs.filter(j => norm(j) !== norm(pseudoMemoire));
+    joueurs = joueurs.filter(j => norm(j) !== norm(pseudo));
     ref.set(joueurs);
 
-    localStorage.removeItem("monPseudoPoker");
-    document.getElementById("nom").value = "";
-
-    alert("Désinscription effectuée pour : " + pseudoMemoire);
+    localStorage.removeItem("pseudo");
 }
 
+function changerPlaces(){
+    let code = document.getElementById("adminCode").value;
+    let nb = parseInt(document.getElementById("nbPlaces").value);
+
+    if(code !== "pexiora2026" && code !== "julien2026")
+        return alert("Code incorrect");
+
+    if(nb < 10 || nb > 200)
+        return alert("Nombre invalide");
+
+    configRef.set({places: nb});
+    alert("Nombre de places mis à jour");
+}
+
+function resetTournoi(){
+    let code = document.getElementById("adminCode").value;
+
+    if(code !== "pexiora2026" && code !== "julien2026")
+        return alert("Code incorrect");
+
+    if(confirm("Réinitialiser ?")){
+        ref.set([]);
+    }
+}
 
 function afficher(){
-    let ins = joueurs.slice(0, PLACES);
-    let att = joueurs.slice(PLACES);
+    let ins = joueurs.slice(0, places);
+    let att = joueurs.slice(places);
 
-    document.getElementById("compteur").innerText =
-        ins.length + "/" + PLACES + " inscrits";
+    let txt = ins.length + "/" + places;
+
+    if(ins.length >= places) txt += " - COMPLET";
+
+    document.getElementById("compteur").innerText = txt;
 
     document.getElementById("liste").innerHTML =
         ins.map((j,i)=>(i+1)+". "+j).join("<br>");
@@ -159,28 +164,11 @@ function afficher(){
     document.getElementById("attente").innerHTML =
         att.map((j,i)=>(i+1)+". "+j).join("<br>");
 }
-    function resetTournoi() {
-  const code = document.getElementById("adminCode").value;
 
-  if (code === "pexiora2026" || code === "julien2026") {
-
-    if (confirm("Réinitialiser le tournoi ?")) {
-
-      firebase.database().ref("joueurs").set([]);
-      alert("Tournoi réinitialisé");
-
-    }
-
-  } else {
-    alert("Code admin incorrect");
-  }
+window.onload = function(){
+    let p = localStorage.getItem("pseudo");
+    if(p) document.getElementById("nom").value = p;
 }
-    window.onload = function() {
-    let pseudoMemoire = localStorage.getItem("monPseudoPoker");
-    if (pseudoMemoire) {
-        document.getElementById("nom").value = pseudoMemoire;
-    }
-};
 </script>
 
 </body>
