@@ -109,8 +109,10 @@ function inscrire(){
 
     joueurs.push(nom);
     ref.set(joueurs);
-
-    localStorage.setItem("pseudo", nom);
+localStorage.setItem("pseudo", nom);
+    localStorage.setItem("monPseudoPoker", nom);
+let pseudo = localStorage.getItem("pseudo") || localStorage.getItem("monPseudoPoker");
+  
 }
 
 function desinscrire(){
