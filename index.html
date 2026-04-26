@@ -11,29 +11,52 @@
 
 <style>
 body {
-    font-family: Arial;
+    font-family: Arial, sans-serif;
     background: #0b1a0b;
     color: white;
     text-align: center;
+    margin: 0;
 }
 .container {
     max-width: 600px;
     margin: auto;
-    padding: 10px;
+    padding: 12px;
 }
-.logo { width: 120px; }
-
+.logo {
+    width: 120px;
+}
 input, button {
     width: 90%;
     padding: 14px;
     margin: 6px;
     border-radius: 8px;
     border: none;
+    font-size: 16px;
 }
-
-.inscrire { background: green; color: white; }
-.desinscrire { background: red; color: white; }
-.admin { background: #444; color: white; }
+.inscrire {
+    background: green;
+    color: white;
+}
+.desinscrire {
+    background: red;
+    color: white;
+}
+.admin {
+    background: #444;
+    color: white;
+}
+#compteur {
+    font-size: 20px;
+    color: gold;
+    margin: 15px;
+}
+#liste, #attente {
+    text-align: left;
+    background: #162816;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 10px;
+}
 </style>
 </head>
 
@@ -45,7 +68,7 @@ input, button {
 
 <h2>PEXIORA POKER CLUB</h2>
 
-<div id="compteur"></div>
+<div id="compteur">Chargement...</div>
 
 <input id="nom" placeholder="Votre pseudo">
 
@@ -67,7 +90,7 @@ input, button {
 
 <button class="admin" onclick="changerPlaces()">Mettre à jour les places</button>
 <button class="admin" onclick="resetTournoi()">Réinitialiser tournoi</button>
-  <button class="admin" onclick="exporter()">Exporter la liste</button>  
+<button class="admin" onclick="exporter()">Exporter la liste</button>
 
 </div>
 
@@ -97,99 +120,133 @@ ref.on("value", snap => {
 
 configRef.on("value", snap => {
     let data = snap.val();
-    if(data && data.places) places = data.places;
+    if (data && data.places) {
+        places = data.places;
+    }
     afficher();
 });
 
-function norm(n){ return n.trim().toLowerCase(); }
+function norm(n) {
+    return n.trim().toLowerCase();
+}
 
-function inscrire(){
+function inscrire() {
     let nom = document.getElementById("nom").value.trim();
-    if(!nom) return alert("Entre un pseudo");
 
-    if(joueurs.some(j => norm(j) === norm(nom)))
-        return alert("Déjà inscrit");
+    if (!nom) {
+        alert("Entre un pseudo");
+        return;
+    }
+
+    if (joueurs.some(j => norm(j) === norm(nom))) {
+        alert("Déjà inscrit");
+        return;
+    }
 
     joueurs.push(nom);
     ref.set(joueurs);
 
     localStorage.setItem("pseudo", nom);
-
     document.getElementById("nom").value = nom;
 
     alert("Pseudo mémorisé : " + nom);
 }
 
-function desinscrire(){
+function desinscrire() {
     let pseudo = localStorage.getItem("pseudo");
 
-    if(!pseudo) return alert("Aucun pseudo mémorisé sur ce téléphone");
-
-    if(!confirm("Voulez-vous vous désinscrire : " + pseudo + " ?"))
+    if (!pseudo) {
+        alert("Aucun pseudo mémorisé sur ce téléphone");
         return;
+    }
+
+    if (!confirm("Voulez-vous vous désinscrire : " + pseudo + " ?")) {
+        return;
+    }
 
     joueurs = joueurs.filter(j => norm(j) !== norm(pseudo));
     ref.set(joueurs);
 
     localStorage.removeItem("pseudo");
-
     document.getElementById("nom").value = "";
 
     alert("Désinscription effectuée : " + pseudo);
 }
 
-function changerPlaces(){
+function changerPlaces() {
     let code = document.getElementById("adminCode").value;
     let nb = parseInt(document.getElementById("nbPlaces").value);
 
-    if(code !== "pexiora2026" && code !== "julien2026")
-        return alert("Code incorrect");
+    if (code !== "pexiora2026" && code !== "julien2026") {
+        alert("Code incorrect");
+        return;
+    }
 
-    if(nb < 10 || nb > 200)
-        return alert("Nombre invalide");
+    if (!nb || nb < 10 || nb > 200) {
+        alert("Nombre invalide");
+        return;
+    }
 
-    configRef.set({places: nb});
+    configRef.set({ places: nb });
     alert("Nombre de places mis à jour");
 }
 
-function resetTournoi(){
+function resetTournoi() {
     let code = document.getElementById("adminCode").value;
 
-    if(code !== "pexiora2026" && code !== "julien2026")
-        return alert("Code incorrect");
+    if (code !== "pexiora2026" && code !== "julien2026") {
+        alert("Code incorrect");
+        return;
+    }
 
-    if(confirm("Réinitialiser ?")){
+    if (confirm("Réinitialiser le tournoi ?")) {
         ref.set([]);
+        alert("Tournoi réinitialisé");
     }
 }
 
-function afficher(){
+function exporter() {
+    if (joueurs.length === 0) {
+        alert("La liste est vide");
+        return;
+    }
+
+    let texte = joueurs.map((j, i) => (i + 1) + ". " + j).join("\n");
+
+    navigator.clipboard.writeText(texte)
+        .then(() => {
+            alert("Liste copiée ! Tu peux la coller dans Excel ou Bloc-notes.");
+        })
+        .catch(() => {
+            alert("Copie impossible sur cet appareil. Essaie depuis le PC.");
+        });
+}
+
+function afficher() {
     let ins = joueurs.slice(0, places);
     let att = joueurs.slice(places);
 
-    let txt = ins.length + "/" + places;
+    let txt = ins.length + " / " + places + " inscrits";
 
-    if(ins.length >= places) txt += " - COMPLET";
+    if (ins.length >= places) {
+        txt += " - COMPLET";
+    }
 
     document.getElementById("compteur").innerText = txt;
 
     document.getElementById("liste").innerHTML =
-        ins.map((j,i)=>(i+1)+". "+j).join("<br>");
+        ins.map((j, i) => (i + 1) + ". " + j).join("<br>") || "Aucun inscrit";
 
     document.getElementById("attente").innerHTML =
-        att.map((j,i)=>(i+1)+". "+j).join("<br>");
+        att.map((j, i) => (i + 1) + ". " + j).join("<br>") || "Aucune attente";
 }
 
-window.onload = function(){
+window.onload = function() {
     let p = localStorage.getItem("pseudo");
-    if(p) document.getElementById("nom").value = p;
-}function exporter(){
-    let texte = joueurs.join("\n");
-
-    navigator.clipboard.writeText(texte);
-
-    alert("Liste copiée ! Colle dans Excel ou Bloc-notes");
-}
+    if (p) {
+        document.getElementById("nom").value = p;
+    }
+};
 </script>
 
 </body>
