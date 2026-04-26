@@ -108,10 +108,9 @@ ref.on("value", snap => {
 });
 
 function norm(n){ return n.trim().toLowerCase(); }
-
 function inscrire(){
     let nom = document.getElementById("nom").value.trim();
-    if(!nom) return alert("Entre un pseudo");
+    if(!nom) return alert("Entre ton pseudo");
 
     if(joueurs.some(j => norm(j) === norm(nom)))
         return alert("Déjà inscrit");
@@ -121,14 +120,31 @@ function inscrire(){
 
     joueurs.push(nom);
     ref.set(joueurs);
-    document.getElementById("nom").value="";
+
+    localStorage.setItem("monPseudoPoker", nom);
+
+    document.getElementById("nom").value = nom;
+    alert("Inscription enregistrée pour : " + nom);
 }
 
 function desinscrire(){
-    let nom = document.getElementById("nom").value.trim();
-    joueurs = joueurs.filter(j => norm(j)!==norm(nom));
+    let pseudoMemoire = localStorage.getItem("monPseudoPoker");
+
+    if(!pseudoMemoire)
+        return alert("Aucun pseudo mémorisé sur ce téléphone.");
+
+    if(!confirm("Voulez-vous vous désinscrire : " + pseudoMemoire + " ?"))
+        return;
+
+    joueurs = joueurs.filter(j => norm(j) !== norm(pseudoMemoire));
     ref.set(joueurs);
+
+    localStorage.removeItem("monPseudoPoker");
+    document.getElementById("nom").value = "";
+
+    alert("Désinscription effectuée pour : " + pseudoMemoire);
 }
+
 
 function afficher(){
     let ins = joueurs.slice(0, PLACES);
@@ -159,6 +175,12 @@ function afficher(){
     alert("Code admin incorrect");
   }
 }
+    window.onload = function() {
+    let pseudoMemoire = localStorage.getItem("monPseudoPoker");
+    if (pseudoMemoire) {
+        document.getElementById("nom").value = pseudoMemoire;
+    }
+};
 </script>
 
 </body>
