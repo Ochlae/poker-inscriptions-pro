@@ -67,6 +67,7 @@ input, button {
 
 <button class="admin" onclick="changerPlaces()">Mettre à jour les places</button>
 <button class="admin" onclick="resetTournoi()">Réinitialiser tournoi</button>
+  <button class="admin" onclick="exporter()">Exporter la liste</button>  
 
 </div>
 
@@ -182,6 +183,12 @@ function afficher(){
 window.onload = function(){
     let p = localStorage.getItem("pseudo");
     if(p) document.getElementById("nom").value = p;
+}function exporter(){
+    let texte = joueurs.join("\n");
+
+    navigator.clipboard.writeText(texte);
+
+    alert("Liste copiée ! Colle dans Excel ou Bloc-notes");
 }
 </script>
 
