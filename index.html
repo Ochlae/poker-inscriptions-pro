@@ -91,6 +91,8 @@ input, button {
 <button class="admin" onclick="changerPlaces()">Mettre à jour les places</button>
 <button class="admin" onclick="resetTournoi()">Réinitialiser tournoi</button>
 <button class="admin" onclick="exporter()">Exporter la liste</button>
+    <input id="pseudoSupprimer" placeholder="Pseudo à supprimer">
+<button class="admin" onclick="supprimerJoueur()">Supprimer un joueur</button>
 
 </div>
 
@@ -247,6 +249,29 @@ window.onload = function() {
         document.getElementById("nom").value = p;
     }
 };
+   function supprimerJoueur() {
+    let code = document.getElementById("adminCode").value;
+    let pseudo = document.getElementById("pseudoSupprimer").value.trim();
+
+    if(code !== "pexiora2026" && code !== "julien2026") {
+        alert("Code admin incorrect");
+        return;
+    }
+
+    if(!pseudo) {
+        alert("Entre un pseudo à supprimer");
+        return;
+    }
+
+    if(!confirm("Supprimer : " + pseudo + " ?")) return;
+
+    joueurs = joueurs.filter(j => norm(j) !== norm(pseudo));
+    ref.set(joueurs);
+
+    document.getElementById("pseudoSupprimer").value = "";
+
+    alert("Joueur supprimé : " + pseudo);
+} 
 </script>
 
 </body>
