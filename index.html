@@ -22,10 +22,8 @@ body {
     margin: auto;
     padding: 12px;
 }
-.logo {
-    width: 120px;
-}
-input, button {
+.logo { width: 120px; }
+input, button, select {
     width: 90%;
     padding: 14px;
     margin: 6px;
@@ -33,24 +31,15 @@ input, button {
     border: none;
     font-size: 16px;
 }
-.inscrire {
-    background: green;
-    color: white;
-}
-.desinscrire {
-    background: red;
-    color: white;
-}
-.admin {
-    background: #444;
-    color: white;
-}
+.inscrire { background: green; color: white; }
+.desinscrire { background: red; color: white; }
+.admin { background: #444; color: white; }
 #compteur {
     font-size: 20px;
     color: gold;
     margin: 15px;
 }
-#liste, #attente {
+#liste, #attente, #mesJoueurs {
     text-align: left;
     background: #162816;
     padding: 12px;
@@ -70,10 +59,15 @@ input, button {
 
 <div id="compteur">Chargement...</div>
 
-<input id="nom" placeholder="Votre pseudo">
+<input id="nom" placeholder="Pseudo à inscrire">
 
-<button class="inscrire" onclick="inscrire()">Je m'inscris</button>
-<button class="desinscrire" onclick="desinscrire()">Je me désinscris</button>
+<button class="inscrire" onclick="inscrire()">Je m'inscris / J'inscris un joueur</button>
+
+<h3>Mes joueurs inscrits depuis ce téléphone</h3>
+<div id="mesJoueurs">Aucun</div>
+
+<input id="pseudoDesinscrire" placeholder="Pseudo à désinscrire">
+<button class="desinscrire" onclick="desinscrire()">Désinscrire ce joueur</button>
 
 <h3>Inscrits</h3>
 <div id="liste"></div>
@@ -91,7 +85,8 @@ input, button {
 <button class="admin" onclick="changerPlaces()">Mettre à jour les places</button>
 <button class="admin" onclick="resetTournoi()">Réinitialiser tournoi</button>
 <button class="admin" onclick="exporter()">Exporter la liste</button>
-    <input id="pseudoSupprimer" placeholder="Pseudo à supprimer">
+
+<input id="pseudoSupprimer" placeholder="Pseudo à supprimer par admin">
 <button class="admin" onclick="supprimerJoueur()">Supprimer un joueur</button>
 
 </div>
@@ -122,9 +117,7 @@ ref.on("value", snap => {
 
 configRef.on("value", snap => {
     let data = snap.val();
-    if (data && data.places) {
-        places = data.places;
-    }
+    if (data && data.places) places = data.places;
     afficher();
 });
 
@@ -132,13 +125,18 @@ function norm(n) {
     return n.trim().toLowerCase();
 }
 
+function getMesJoueurs() {
+    return JSON.parse(localStorage.getItem("mesJoueursPoker")) || [];
+}
+
+function saveMesJoueurs(liste) {
+    localStorage.setItem("mesJoueursPoker", JSON.stringify(liste));
+}
+
 function inscrire() {
     let nom = document.getElementById("nom").value.trim();
 
-    if (!nom) {
-        alert("Entre un pseudo");
-        return;
-    }
+    if (!nom) return alert("Entre un pseudo");
 
     if (joueurs.some(j => norm(j) === norm(nom))) {
         alert("Déjà inscrit");
@@ -148,31 +146,44 @@ function inscrire() {
     joueurs.push(nom);
     ref.set(joueurs);
 
-    localStorage.setItem("pseudo", nom);
-    document.getElementById("nom").value = nom;
+    let mesJoueurs = getMesJoueurs();
 
-    alert("Pseudo mémorisé : " + nom);
+    if (!mesJoueurs.some(j => norm(j) === norm(nom))) {
+        mesJoueurs.push(nom);
+        saveMesJoueurs(mesJoueurs);
+    }
+
+    document.getElementById("nom").value = "";
+    alert("Inscription enregistrée : " + nom);
+    afficherMesJoueurs();
 }
 
 function desinscrire() {
-    let pseudo = localStorage.getItem("pseudo");
+    let pseudo = document.getElementById("pseudoDesinscrire").value.trim();
 
-    if (!pseudo) {
-        alert("Aucun pseudo mémorisé sur ce téléphone");
+    if (!pseudo) return alert("Entre le pseudo à désinscrire");
+
+    let mesJoueurs = getMesJoueurs();
+
+    let autorise = mesJoueurs.some(j => norm(j) === norm(pseudo));
+
+    if (!autorise) {
+        alert("Ce joueur n'a pas été inscrit depuis ce téléphone.");
         return;
     }
 
-    if (!confirm("Voulez-vous vous désinscrire : " + pseudo + " ?")) {
-        return;
-    }
+    if (!confirm("Désinscrire : " + pseudo + " ?")) return;
 
     joueurs = joueurs.filter(j => norm(j) !== norm(pseudo));
     ref.set(joueurs);
 
-    localStorage.removeItem("pseudo");
-    document.getElementById("nom").value = "";
+    mesJoueurs = mesJoueurs.filter(j => norm(j) !== norm(pseudo));
+    saveMesJoueurs(mesJoueurs);
+
+    document.getElementById("pseudoDesinscrire").value = "";
 
     alert("Désinscription effectuée : " + pseudo);
+    afficherMesJoueurs();
 }
 
 function changerPlaces() {
@@ -207,6 +218,25 @@ function resetTournoi() {
     }
 }
 
+function supprimerJoueur() {
+    let code = document.getElementById("adminCode").value;
+    let pseudo = document.getElementById("pseudoSupprimer").value.trim();
+
+    if (code !== "pexiora2026" && code !== "julien2026") {
+        alert("Code admin incorrect");
+        return;
+    }
+
+    if (!pseudo) return alert("Entre un pseudo à supprimer");
+
+    if (!confirm("Supprimer : " + pseudo + " ?")) return;
+
+    joueurs = joueurs.filter(j => norm(j) !== norm(pseudo));
+    ref.set(joueurs);
+
+    alert(pseudo + " supprimé");
+}
+
 function exporter() {
     if (joueurs.length === 0) {
         alert("La liste est vide");
@@ -224,15 +254,20 @@ function exporter() {
         });
 }
 
+function afficherMesJoueurs() {
+    let mesJoueurs = getMesJoueurs();
+
+    document.getElementById("mesJoueurs").innerHTML =
+        mesJoueurs.map((j, i) => (i + 1) + ". " + j).join("<br>") || "Aucun";
+}
+
 function afficher() {
     let ins = joueurs.slice(0, places);
     let att = joueurs.slice(places);
 
     let txt = ins.length + " / " + places + " inscrits";
 
-    if (ins.length >= places) {
-        txt += " - COMPLET";
-    }
+    if (ins.length >= places) txt += " - COMPLET";
 
     document.getElementById("compteur").innerText = txt;
 
@@ -241,37 +276,13 @@ function afficher() {
 
     document.getElementById("attente").innerHTML =
         att.map((j, i) => (i + 1) + ". " + j).join("<br>") || "Aucune attente";
+
+    afficherMesJoueurs();
 }
 
 window.onload = function() {
-    let p = localStorage.getItem("pseudo");
-    if (p) {
-        document.getElementById("nom").value = p;
-    }
+    afficherMesJoueurs();
 };
-   function supprimerJoueur() {
-    let code = document.getElementById("adminCode").value;
-    let pseudo = document.getElementById("pseudoSupprimer").value.trim();
-
-    if(code !== "pexiora2026" && code !== "julien2026") {
-        alert("Code admin incorrect");
-        return;
-    }
-
-    if(!pseudo) {
-        alert("Entre un pseudo à supprimer");
-        return;
-    }
-
-    if(!confirm("Supprimer : " + pseudo + " ?")) return;
-
-    joueurs = joueurs.filter(j => norm(j) !== norm(pseudo));
-    ref.set(joueurs);
-
-    document.getElementById("pseudoSupprimer").value = "";
-
-    alert("Joueur supprimé : " + pseudo);
-} 
 </script>
 
 </body>
