@@ -61,13 +61,16 @@ input, button, select {
 
 <input id="nom" placeholder="Pseudo à inscrire">
 
-<button class="inscrire" onclick="inscrire()">Je m'inscris / J'inscris un joueur</button>
+<button class="inscrire" onclick="inscrire()">Inscrire ce joueur</button>
 
-<h3>Mes joueurs inscrits depuis ce téléphone</h3>
+<h3>Mes joueurs inscrits depuis cet appareil</h3>
 <div id="mesJoueurs">Aucun</div>
 
-<input id="pseudoDesinscrire" placeholder="Pseudo à désinscrire">
-<button class="desinscrire" onclick="desinscrire()">Désinscrire ce joueur</button>
+<select id="selectDesinscrire">
+    <option value="">Choisir un joueur à désinscrire</option>
+</select>
+
+<button class="desinscrire" onclick="desinscrire()">Désinscrire le joueur choisi</button>
 
 <h3>Inscrits</h3>
 <div id="liste"></div>
@@ -154,21 +157,16 @@ function inscrire() {
     }
 
     document.getElementById("nom").value = "";
+
     alert("Inscription enregistrée : " + nom);
-    afficherMesJoueurs();
+    afficher();
 }
 
 function desinscrire() {
-    let pseudo = document.getElementById("pseudoDesinscrire").value.trim();
+    let pseudo = document.getElementById("selectDesinscrire").value;
 
-    if (!pseudo) return alert("Entre le pseudo à désinscrire");
-
-    let mesJoueurs = getMesJoueurs();
-
-    let autorise = mesJoueurs.some(j => norm(j) === norm(pseudo));
-
-    if (!autorise) {
-        alert("Ce joueur n'a pas été inscrit depuis ce téléphone.");
+    if (!pseudo) {
+        alert("Choisis un joueur à désinscrire");
         return;
     }
 
@@ -177,13 +175,12 @@ function desinscrire() {
     joueurs = joueurs.filter(j => norm(j) !== norm(pseudo));
     ref.set(joueurs);
 
+    let mesJoueurs = getMesJoueurs();
     mesJoueurs = mesJoueurs.filter(j => norm(j) !== norm(pseudo));
     saveMesJoueurs(mesJoueurs);
 
-    document.getElementById("pseudoDesinscrire").value = "";
-
     alert("Désinscription effectuée : " + pseudo);
-    afficherMesJoueurs();
+    afficher();
 }
 
 function changerPlaces() {
@@ -214,7 +211,9 @@ function resetTournoi() {
 
     if (confirm("Réinitialiser le tournoi ?")) {
         ref.set([]);
+        localStorage.removeItem("mesJoueursPoker");
         alert("Tournoi réinitialisé");
+        afficher();
     }
 }
 
@@ -235,6 +234,7 @@ function supprimerJoueur() {
     ref.set(joueurs);
 
     alert(pseudo + " supprimé");
+    afficher();
 }
 
 function exporter() {
@@ -259,6 +259,16 @@ function afficherMesJoueurs() {
 
     document.getElementById("mesJoueurs").innerHTML =
         mesJoueurs.map((j, i) => (i + 1) + ". " + j).join("<br>") || "Aucun";
+
+    let select = document.getElementById("selectDesinscrire");
+    select.innerHTML = '<option value="">Choisir un joueur à désinscrire</option>';
+
+    mesJoueurs.forEach(j => {
+        let option = document.createElement("option");
+        option.value = j;
+        option.textContent = j;
+        select.appendChild(option);
+    });
 }
 
 function afficher() {
